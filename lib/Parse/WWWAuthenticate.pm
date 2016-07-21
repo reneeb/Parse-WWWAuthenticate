@@ -10,7 +10,7 @@ use base 'Exporter';
 use Carp qw(croak);
 use HTTP::Headers::Util qw(_split_header_words);
 
-our $VERSION = 0.01;
+our $VERSION = 0.02;
 
 our @EXPORT_OK = qw(parse_wwwa);
 
