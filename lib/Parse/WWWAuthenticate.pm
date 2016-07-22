@@ -10,7 +10,7 @@ use base 'Exporter';
 use Carp qw(croak);
 use HTTP::Headers::Util qw(_split_header_words);
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 our @EXPORT_OK = qw(parse_wwwa);
 
@@ -19,8 +19,8 @@ sub parse_wwwa {
 
    my @parts = split_header_words( $string);
 
-   my $challenge = $parts[0]->[0];
-   my %challenges;
+   my $challenge;
+   my @challenges;
 
    PART:
    for my $part ( @parts ) {
@@ -28,32 +28,32 @@ sub parse_wwwa {
 
       if ( !defined $challenge_check ) {
          $challenge = ucfirst lc $maybe_challenge;
+         push @challenges, { name => $challenge, params => {} };
       }
 
       my ($key, $value) = ($part->[-2], $part->[-1]);
       if ( !defined $value ) {
-         if ( !exists $challenges{$challenge} ) {
-            $challenges{$challenge} = {};
-         }
          next PART;
       }
 
       my $lc_key = lc $key;
       if ( $challenge eq 'Basic' &&
          $lc_key eq 'realm' &&
-         exists $challenges{$challenge}->{$lc_key}
+         exists $challenges[-1]->{params}->{$lc_key}
       ) {
          croak 'only one realm is allowed';
       }
 
-      $challenges{$challenge}->{lc $key} = $value;
+      $challenges[-1]->{params}->{lc $key} = $value;
    }
 
-   if ( exists $challenges{Basic} && !exists $challenges{Basic}->{realm} ) {
-      croak 'realm parameter is missing';
+   for my $challenge ( @challenges ) {
+       if ( $challenge->{name} eq 'Basic' && !exists $challenge->{params}->{realm} ) {
+          croak 'realm parameter is missing';
+       }
    }
 
-   return %challenges;
+   return @challenges;
 }
 
 sub split_header_words {
@@ -73,13 +73,11 @@ sub split_header_words {
   use Parse::WWWAuthenticate qw(parse_wwwa);
   
   my $header = 'Basic realm="test"';
-  my %challenges = parse_wwwa( $header );
-  if ( $challenges{Basic} ) {
-      print "Need credentials for realm " . $challenges{Basic}->{realm};
+  my @challenges = parse_wwwa( $header );
+  for my $challenge ( @challenges ) {
+      print "Server accepts: " . $challenge->{name};
   }
   
-  print "Those challenges are allowed: " . join ', ', sort keys %challenges;
-
 kinda more real life:
 
   use LWP::UserAgent;
@@ -89,12 +87,10 @@ kinda more real life:
   my $response = $ua->get('http://some.domain.example');
   my $header   = $response->header('WWW-Authenticate');
   
-  my %challenges = parse_wwwa( $header );
-  if ( $challenges{Basic} ) {
-      print "Need credentials for realm " . $challenges{Basic}->{realm};
+  my @challenges = parse_wwwa( $header );
+  for my $challenge ( @challenges ) {
+      print "Try to use $challenge->{name}...\n";
   }
-  
-  print "Those challenges are allowed: " . join ', ', sort keys %challenges;
 
 =head1 FUNCTIONS
 
@@ -103,12 +99,10 @@ kinda more real life:
 parses the content of the I<WWW-Authenticate> header and returns a hash of all the challenges and their data.
 
   my $header = 'Basic realm="test"';
-  my %challenges = parse_wwwa( $header );
-  if ( $challenges{Basic} ) {
-      print "Need credentials for realm " . $challenges{Basic}->{realm};
+  my @challenges = parse_wwwa( $header );
+  for my $challenge ( @challenges ) {
+      print "Try to use $challenge->{name}...\n";
   }
-  
-  print "Those challenges are allowed: " . join ', ', sort keys %challenges;
 
 =head2 split_header_words
 
