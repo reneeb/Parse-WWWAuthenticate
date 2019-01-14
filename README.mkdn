@@ -1,0 +1,111 @@
+[![Build Status](https://travis-ci.org/reneeb/Parse-WWWAuthenticate.svg?branch=master)](https://travis-ci.org/reneeb/Parse-WWWAuthenticate)
+[![Kwalitee status](http://cpants.cpanauthors.org/dist/Parse-WWWAuthenticate.png)](http://cpants.charsbar.org/dist/overview/Parse-WWWAuthenticate)
+[![GitHub issues](https://img.shields.io/github/issues/reneeb/Parse-WWWAuthenticate.svg)](https://github.com/reneeb/Parse-WWWAuthenticate/issues)
+
+# NAME
+
+Parse::WWWAuthenticate - Parse the WWW-Authenticate HTTP header
+
+# VERSION
+
+version 0.03
+
+# SYNOPSIS
+
+    use Parse::WWWAuthenticate qw(parse_wwwa);
+    
+    my $header = 'Basic realm="test"';
+    my @challenges = parse_wwwa( $header );
+    for my $challenge ( @challenges ) {
+        print "Server accepts: " . $challenge->{name};
+    }
+
+kinda more real life:
+
+    use LWP::UserAgent;
+    use Parse::WWWAuthenticate qw(parse_wwwa);
+    
+    my $ua       = LWP::UserAgent->new;
+    my $response = $ua->get('http://some.domain.example');
+    my $header   = $response->header('WWW-Authenticate');
+    
+    my @challenges = parse_wwwa( $header );
+    for my $challenge ( @challenges ) {
+        print "Try to use $challenge->{name}...\n";
+    }
+
+# FUNCTIONS
+
+## parse\_wwwa
+
+parses the content of the _WWW-Authenticate_ header and returns a hash of all the challenges and their data.
+
+    my $header = 'Basic realm="test"';
+    my @challenges = parse_wwwa( $header );
+    for my $challenge ( @challenges ) {
+        print "Try to use $challenge->{name}...\n";
+    }
+
+## split\_header\_words
+
+# ACKNOWLEDGEMENTS
+
+The testcases were generated with the httpauth.xml file from [https://greenbyte.de/tech/tc/httpauth](https://greenbyte.de/tech/tc/httpauth).
+
+
+
+# Development
+
+The distribution is contained in a Git repository, so simply clone the
+repository
+
+```
+$ git clone http://github.com/reneeb/Parse-WWWAuthenticate.git
+```
+
+and change into the newly-created directory.
+
+```
+$ cd Parse-WWWAuthenticate
+```
+
+The project uses [`Dist::Zilla`](https://metacpan.org/pod/Dist::Zilla) to
+build the distribution, hence this will need to be installed before
+continuing:
+
+```
+$ cpanm Dist::Zilla
+```
+
+To install the required prequisite packages, run the following set of
+commands:
+
+```
+$ dzil authordeps --missing | cpanm
+$ dzil listdeps --author --missing | cpanm
+```
+
+The distribution can be tested like so:
+
+```
+$ dzil test
+```
+
+To run the full set of tests (including author and release-process tests),
+add the `--author` and `--release` options:
+
+```
+$ dzil test --author --release
+```
+
+# AUTHOR
+
+Renee Baecker <reneeb@cpan.org>
+
+# COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2016 by Renee Baecker.
+
+This is free software, licensed under:
+
+    The Artistic License 2.0 (GPL Compatible)
